@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Real-time Data</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://kit.fontawesome.com/5e3242cc7f.js" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+
+    <style>
+        /* #average-value {
+        font-size: 20px;
+        font-weight: bold;
+        color: #009578;
+    } */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=VT323&display=swap');
+    @keyframes blinkCursor {
+  50% {
+    border-right-color: transparent;
+  }
+}
+
+@keyframes typeAndDelete {
+  0%,
+  10% {
+    width: 0;
+  }
+  45%,
+  55% {
+    width: 6.2em;
+  } /* adjust width based on content */
+  90%,
+  100% {
+    width: 0;
+  }
+}
+
+.terminal-loader { 
+  
+
+  border: 0.1em solid #333;
+  background-color: #3340c8;
+  color: rgb(235, 235, 235);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 1em;
+  padding: 1.5em 1em;
+  width: 12em;
+  margin: 100px auto;
+  margin-top: 1.5em;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.terminal-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5em;
+  background-color: #333;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  padding: 0 0.4em;
+  box-sizing: border-box;
+}
+
+.terminal-controls {
+  float: right;
+}
+
+.control {
+  display: inline-block;
+  width: 0.6em;
+  height: 0.6em;
+  margin-left: 0.4em;
+  border-radius: 50%;
+  background-color: #777;
+}
+
+.control.close {
+  background-color: #e33;
+}
+
+.control.minimize {
+  background-color: #ee0;
+}
+
+.control.maximize {
+  background-color: #0b0;
+}
+
+.terminal-title {
+  float: left;
+  line-height: 1.5em;
+  color: #eee;
+}
+
+.text {
+  font-family: "VT323", monospace;
+  font-size: 25px;
+  font-weight: 400;
+  font-style: normal;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 0.2em solid green; /* Cursor */
+  animation: typeAndDelete 4s steps(11) infinite,
+    blinkCursor 0.5s step-end infinite alternate;
+  margin-top: 0;
+}
+.score{
+    font-size: 25px;
+    font-family: "VT323", monospace;
+  font-weight: 400;
+  font-style: normal;
+}
+
+    </style>
+    <div class="page">
+        <nav></nav>
+        <footer></footer>
+        <div id="sidebar" style="color: #333; font-size:30px;">Indoor Farming <i class="fa-brands fa-pagelines"></i><span class="title-brand"></span>
+            <ul>
+                <li><a href="" style="white-space: nowrap;"><i class="fa-solid fa-gauge"></i> Dashboard</a> <span></span></li>
+                <li><a href="./table.php"><i class="fa-solid fa-table"></i> Table</a> <span> </span></li>
+                <li><a href="./about.php"><i class="fa-solid fa-person-circle-question"></i> About</a> <span> </span></li>
+
+
+            </ul>
+            <img class="plant-sidebar" src="img/plant-sidebar.png" alt="" width="200px">
+        </div>
+        <main>
+            <h3 style="color: black;">Latest Data</h3>
+            <table class="table table-light">
+                <thead class="thead bg-success " id="tables">
+                    <tr>
+                        <th class="fw-bold" scope="col">ID</th>
+                        <th class="fw-bold" scope="col">Soil Moisture</th>
+                        <th class="fw-bold" scope="col">Humidity</th>
+                        <th class="fw-bold" scope="col">Temperature</th>
+                        <th class="fw-bold" scope="col">Created</th>
+                    </tr>
+                </thead>
+                <tbody id="dataContainer"></tbody>
+            </table>
+
+        </main>
+         <!-- Soil Moisture Section -->
+        <div id="section1">
+            <div class="col-md-4 text-center">
+                <div class="circular-progress" id="soil-moisture">
+                    <div class="value-container">0%</div>
+                </div>
+
+                <h5 class="progress-label">Soil Moisture</h5>
+                <div class="measurement-indicator" id="soil-moisture-indicator"></div>
+                <img class="soil-pic" id="image" src="img/soil-analysis.png" alt="" width="40px">
+
+            </div>
+
+        </div>
+
+        <!-- Humidity Section -->
+        <div id="section2">
+            <div class="col-md-4 text-center">
+                <div class="circular-progress" id="humidity">
+                    <div class="value-container">0%</div>
+                </div>
+                <h5 class="progress-label">Humidity</h5>
+                <div class="measurement-indicator" id="humidity-indicator"></div>
+                <img class="humidity-pic" id="image" src="img/humidity.png" alt="" width="40px">
+            </div>
+        </div>
+
+        <!-- Temperature Section -->
+        <div id="section3">
+            <div class="col-md-4 text-center">
+                <div class="circular-progress" id="temperature">
+                    <div class="value-container">0°C</div>
+                </div>
+                <h5 class="progress-label">Temperature</h5>
+                <div class="measurement-indicator" id="temperature-indicator"></div>
+                <img class="temperature-pic" id="image" src="img/temperature-check.png" alt="" width="40px">
+            </div>
+        </div>
+
+        <div id="section4">
+
+            <h4 style="color: black;">Real-time Data Bar Chart</h4>
+            <canvas id="barChart"></canvas>
+        </div>
+
+
+
+        <div id="section5">
+            <!-- <div class="measurement-indicator" id="status-indicator"></div> -->
+            <!-- <div id="status-text" style="margin-top: 10px; font-size: 20px; font-weight: 500;"></div> -->
+            <!-- <h5 style="font-weight: 600; font-size: 20px;">Plant Status</h5>
+            <div class="terminal-loader">
+                <div class="terminal-header">
+                  <div class="terminal-title">Status</div>
+                  <div class="terminal-controls">
+                    <div class="control close"></div>
+                    <div class="control minimize"></div>
+                    <div class="control maximize"></div>
+                  </div>
+                </div>
+                
+                <div class="score" id="average-value" style="margin-top: 0.5em;"></div>
+                <div class="text" id="status-text"></div>
+                
+              </div> -->
+<!-- 
+        // Soil Moisture Range
+        //     Low (0%-19%)
+        //     Normal(20%-60%)
+        //     High(61%-100%)
+        //  Humidity Range
+        //     Low (0%-25%)
+        //     Normal(40%-60%)
+        //     High(61%-100%)
+        //  Temperature Range
+        //     Low (0%-17%)
+        //     Normal(18%-24%)
+        //     High(25%-100%) -->
+              <div class="ledge-container">
+                <h6 style="font-weight: bold; font-size: 11px;">Soil Moisture Range</h6>
+                <h6 class="legend" style="font-size: 10px;"><span class="dot low-dot"></span>Low (0%-19%) </h6>
+                <h6 class="legend"style="font-size: 10px;" ><span class="dot mid-dot"></span>Normal(20%-60%)</h6>
+                <h6 class="legend" style="font-size: 10px;"><span class="dot high-dot"></span>High(61%-100%)</h6>
+
+                    <h6 style="font-weight:bold; font-size: 11px;" >Humidity Range </h6>
+                    <h6 class="legend" style="font-size: 10px;"><span class="dot low-dot"></span>Low (0%-25%) </h6>
+                    <h6 class="legend" style="font-size: 10px;"><span class="dot mid-dot"></span>Normal(40%-60%)</h6>
+                    <h6 class="legend" style="font-size: 10px;"><span class="dot high-dot"></span>High(61%-100%)</h6>    
+
+                        <h6 style="font-weight:bold; font-size: 11px;">Temperature Range </h6>
+                    <h6 class="legend" style="font-size: 10px;"><span class="dot low-dot"></span>Low (0%-17%) </h6>
+                    <h6 class="legend" style="font-size: 10px;"><span class="dot mid-dot"></span>Normal(18%-24%)</h6>
+                    <h6 class="legend" style="font-size: 10px;"><span class="dot high-dot"></span>High(25%-100%)</h6>    
+
+                        
+              </div>
+              
+        
+            
+        </div>
+        
+
+
+    <script src="chart.js"></script>
+
+    <script>
+
+
+            
+function updateSoilMoistureProgressBar(value) {
+    updateCircularProgressBar($("#soil-moisture"), value, "%");
+    updateSoilMoistureMeasurementIndicator('soil-moisture-indicator', value);
+}
+
+function updateHumidityProgressBar(value) {
+    updateCircularProgressBar($("#humidity"), value, "%");
+    updateHumidityMeasurementIndicator('humidity-indicator', value);
+}
+
+function updateTemperatureProgressBar(value) {
+    updateCircularProgressBar($("#temperature"), value, "°C");
+    updateTemperatureMeasurementIndicator('temperature-indicator', value);
+}
+
+// Soil Moisture Measurement Indicator
+function updateSoilMoistureMeasurementIndicator(indicatorId, value) {
+    var indicator = $("#" + indicatorId);
+
+    if (value > 60) {
+        indicator.html('<span class="dot high-dot"></span> High');
+        indicator.addClass('high-indicator').removeClass('mid-indicator low-indicator');
+    } else if (value > 20) {
+        indicator.html('<span class="dot mid-dot"></span> Normal');
+        indicator.addClass('mid-indicator').removeClass('high-indicator low-indicator');
+    } else {
+        indicator.html('<span class="dot low-dot"></span> Low');
+        indicator.addClass('low-indicator').removeClass('high-indicator mid-indicator');
+    }
+}
+
+// Humidity Measurement Indicator
+function updateHumidityMeasurementIndicator(indicatorId, value) {
+    var indicator = $("#" + indicatorId);
+
+    if (value > 60) {
+        indicator.html('<span class="dot high-dot"></span> High');
+        indicator.addClass('high-indicator').removeClass('mid-indicator low-indicator');
+    } else if (value > 25) {
+        indicator.html('<span class="dot mid-dot"></span> Normal');
+        indicator.addClass('mid-indicator').removeClass('high-indicator low-indicator');
+    } else {
+        indicator.html('<span class="dot low-dot"></span> Low');
+        indicator.addClass('low-indicator').removeClass('high-indicator mid-indicator');
+    }
+}
+
+// Temperature Measurement Indicator
+function updateTemperatureMeasurementIndicator(indicatorId, value) {
+    var indicator = $("#" + indicatorId);
+
+    if (value > 24) {
+        indicator.html('<span class="dot high-dot"></span> High');
+        indicator.addClass('high-indicator').removeClass('mid-indicator low-indicator');
+    } else if (value > 18) {
+        indicator.html('<span class="dot mid-dot"></span> Normal');
+        indicator.addClass('mid-indicator').removeClass('high-indicator low-indicator');
+    } else {
+        indicator.html('<span class="dot low-dot"></span> Low');
+        indicator.addClass('low-indicator').removeClass('high-indicator mid-indicator');
+    }
+}
+       
+        
+
+        function updateCircularProgressBar(progressBar, value, unit) {
+            var valueContainer = progressBar.find('.value-container');
+            var speed = 1;
+            var progressValue = 0;
+            var progressEndValue = Math.min(Math.max(value, 0), 100);
+            var color;
+
+            switch (progressBar.attr('id')) {
+                case 'soil-moisture':
+                    color = value > 61 ? 'red' : (value > 20 ? 'green' : 'yellow');
+                    break;
+                case 'humidity':
+                    color = value > 60 ? 'red' : (value > 40 ? 'green' : 'yellow');
+                    break;
+                case 'temperature':
+                    color = value > 24 ? 'red' : (value > 18 ? 'green' : 'yellow');
+                    break;
+                default:
+                    color = '#4d4bf9'; // Default color
+            }
+
+            var progress = setInterval(() => {
+                progressValue++;
+                valueContainer.text(`${progressValue.toFixed(0)}${unit}`);
+                progressBar.css('background', `conic-gradient(
+                    ${color} ${progressValue * 3.6}deg,
+                    #cadcff ${progressValue * 3.6}deg
+                )`);
+
+                if (progressValue >= progressEndValue) {
+                    clearInterval(progress);
+                }
+            }, speed);
+
+
+        }
+
+
+        setInterval(fetchAndUpdateData, 2000);
+
+        function fetchAndUpdateData() {
+            $.ajax({
+                url: "fetch.php",
+                method: "GET",
+                dataType: "json",
+                success: function (response) {
+                    var latestData = response.data;
+
+                    if (latestData) {
+                        var soilMoisturePercentage = parseFloat(latestData.soil_moisture / 1000) * 100;
+                        var humidityPercentage = parseFloat(latestData.humidity);
+                        var temperatureValue = parseFloat(latestData.temperature);
+
+                        // Calculate average
+                        // var averageValue = (soilMoisturePercentage + humidityPercentage + temperatureValue) / 3;
+                        
+
+                        // $('#average-value').html(`Overall Health Average: ${averageValue.toFixed(2)}`);
+
+                            
+
+                        // function updateStatusIndicator(averageValue) {
+                        //     var indicator = $('#status-indicator');
+                        //     var statusText = $('#status-text');
+
+                        //     if (averageValue > 70) {
+                        //         indicator.html('<span class="dot high-dot"></span>  High');
+                        //         indicator.addClass('high-indicator').removeClass('mid-indicator low-indicator');
+                        //         statusText.text('HIGH.....');
+                        //     } else if (averageValue > 40) {
+                        //         indicator.html('<span class="dot mid-dot"></span> Normal');
+                        //         indicator.addClass('mid-indicator').removeClass('high-indicator low-indicator');
+                        //         statusText.text('NORMAL.....');
+                        //     } else {
+                        //         indicator.html('<span class="dot low-dot"></span> Low');
+                        //         indicator.addClass('low-indicator').removeClass('high-indicator mid-indicator');
+                        //         statusText.text('LOW......');
+                        //     }
+                        // }
+
+                       
+
+
+                        $("#dataContainer").html(`
+                            <tr scope="row text-center">
+                                <td class="fw-normal">${latestData.id}</td>
+                                <td class="fw-normal">${soilMoisturePercentage.toFixed(2)}%</td>
+                                <td class="fw-normal">${humidityPercentage}%</td>
+                                <td class="fw-normal">${temperatureValue}°C</td>
+                                <td class="fw-normal">${new Date(latestData.created_at).toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: 'numeric',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric',
+                                    hour12: true
+                                })}</td>
+                            </tr>
+                        `);
+                        updateBarChartSection(latestData);
+                        updateSoilMoistureProgressBar(soilMoisturePercentage);
+                        updateHumidityProgressBar(humidityPercentage);
+                        updateTemperatureProgressBar(temperatureValue);
+                        // updateStatusIndicator(averageValue);
+                        // updateSoilMeasurementIndicator(value);
+                        // updateMeasurementIndicator(indicatorId);
+                        // updateLegend();
+                        
+
+                    } else {
+                        console.error("Data is not an array:", latestData);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error fetching data:", error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
